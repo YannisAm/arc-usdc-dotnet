@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ArcHelloWorld/ArcHelloWorld.csproj" />
+  <Project Path="ArcUsdc/ArcUsdc.csproj" />
+</Solution>
