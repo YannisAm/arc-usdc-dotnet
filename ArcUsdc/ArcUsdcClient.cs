@@ -14,7 +14,6 @@ namespace ArcUsdc
         private readonly Account _account;
         private readonly Web3 _web3;
         private const string _web3Url = "https://rpc.testnet.arc.network";
-        private const string _usdcContractAddress = "0x3600000000000000000000000000000000000000"; // USDC contract address on
         private readonly ERC20ContractService _usdc;
 
         public ArcUsdcClient(string privateKey)
@@ -22,7 +21,7 @@ namespace ArcUsdc
             _account = new Account(privateKey, chainId: 5042002);
             _web3 = new Web3(_account, _web3Url);
             Address = _account.Address;
-            _usdc = _web3.Eth.ERC20.GetContractService(_usdcContractAddress);
+            _usdc = _web3.Eth.ERC20.GetContractService(ArcConstants.UsdcContractAddress);
         }
 
         public async Task<decimal> GetBalanceAsync()
@@ -33,12 +32,9 @@ namespace ArcUsdc
 
         public async Task<string> TransferAsync(string toAddress, decimal amount)
         {
-            if (amount <= 0)
-                throw new ArgumentException("Transfer amount must be greater than zero.", nameof(amount));
-
-            if (string.IsNullOrWhiteSpace(toAddress))
-                throw new ArgumentException("Recipient address cannot be null or empty.", nameof(toAddress));
-
+            ArcUsdcValidator.EnsureAmount(amount);
+            ArcUsdcValidator.EnsureAddress(toAddress);
+            
             var rawAmount = Web3.Convert.ToWei(amount, 6);
 
             try
