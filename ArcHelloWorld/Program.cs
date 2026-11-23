@@ -19,9 +19,9 @@ ArcUsdcClient client = new ArcUsdcClient(ecKey);
 var balance = await client.GetBalanceAsync();
 var adress = client.Address;
 
-var receipt = await client.TransferAsync("0x3C3380cdFb94dFEEaA41cAD9F58254AE380d752D", 0.01m);
+//var receipt = await client.TransferAsync("0x3C3380cdFb94dFEEaA41cAD9F58254AE380d752D", 1m);
 // var receipt = await client.TransferAsync("hello", 20.01m);
 
 Console.WriteLine($"Balance: {balance} USDC");
 Console.WriteLine($"Address: {adress}");
-// Console.WriteLine($"Transaction hash: {receipt}");
+//Console.WriteLine($"Transaction hash: {receipt}");
