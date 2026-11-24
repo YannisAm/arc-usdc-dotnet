@@ -15,13 +15,13 @@ namespace ArcUsdc
 
         private readonly Account _account;
         private readonly Web3 _web3;
-        private const string _web3Url = "https://rpc.testnet.arc.network";
+        
         private readonly ERC20ContractService _usdc;
 
         public ArcUsdcClient(string privateKey)
         {
-            _account = new Account(privateKey, chainId: 5042002);
-            _web3 = new Web3(_account, _web3Url);
+            _account = new Account(privateKey, ArcConstants.ChainId);
+            _web3 = new Web3(_account, ArcConstants.RpcUrl);
             Address = _account.Address;
             _usdc = _web3.Eth.ERC20.GetContractService(ArcConstants.UsdcContractAddress);
         }
@@ -29,15 +29,16 @@ namespace ArcUsdc
         public async Task<decimal> GetBalanceAsync()
         {
             var tokenBalance = await _usdc.BalanceOfQueryAsync(_account.Address);
-            return Web3.Convert.FromWei(tokenBalance, 6); // USDC has 6 decimal places
+            
+            return UsdcUnits.FromUnits(tokenBalance);
         }
 
         public async Task<string> TransferAsync(string toAddress, decimal amount)
         {
             ArcUsdcValidator.EnsureAmount(amount);
             ArcUsdcValidator.EnsureAddress(toAddress);
-            
-            var rawAmount = Web3.Convert.ToWei(amount, 6);
+
+            var rawAmount = UsdcUnits.ToUnits(amount);
 
             try
             {
@@ -52,9 +53,9 @@ namespace ArcUsdc
 
                 if (balance < rawAmount + feeIn6Decimals)
                 {
-                    var need = Web3.Convert.FromWei(rawAmount, 6);
-                    var fee = Web3.Convert.FromWei(feeIn6Decimals, 6);
-                    var have = Web3.Convert.FromWei(balance, 6);
+                    var need = UsdcUnits.FromUnits(rawAmount);
+                    var fee = UsdcUnits.FromUnits(feeIn6Decimals);
+                    var have = UsdcUnits.FromUnits(balance);
 
                     throw new InvalidOperationException(
                         $"Insufficient balance: need {need} USDC plus ~{fee} USDC network fee, but only {have} USDC is available.");
@@ -83,12 +84,12 @@ namespace ArcUsdc
             ArcUsdcValidator.EnsureAddress(toAddress);
 
             // decimal → units
-            var rawAmount = Web3.Convert.ToWei(amount, 6);      
+            var rawAmount = UsdcUnits.ToUnits(amount);      
             
             var feeUnits = await EstimateFeeUnitsAsync(toAddress, rawAmount);
             
             // units → decimal
-            return Web3.Convert.FromWei(feeUnits, 6);                         
+            return UsdcUnits.FromUnits(feeUnits);                         
         }
 
         private async Task<BigInteger> EstimateFeeUnitsAsync(string toAddress, BigInteger rawAmount)
@@ -109,8 +110,7 @@ namespace ArcUsdc
             var feeIn18Decimals = gasEstimate.Value * gasPrice.Value;
                 
             // from 18digit to 6digit with round up
-            var divisor = BigInteger.Pow(10, 12);
-            var feeIn6Decimals = (feeIn18Decimals + divisor - 1) / divisor;
+            var feeIn6Decimals = UsdcUnits.FromNativeRoundUp(feeIn18Decimals);
 
             return feeIn6Decimals;
         }
