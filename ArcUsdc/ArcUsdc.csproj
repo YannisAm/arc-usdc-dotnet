@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Nethereum.Web3" Version="7.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <InternalsVisibleTo Include="ArcUsdc.Tests" />
   </ItemGroup>
 
 </Project>
