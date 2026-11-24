@@ -36,6 +36,7 @@ Get free testnet USDC from the [Circle Faucet](https://faucet.circle.com) (choos
 
 - [x] Address validation
 - [x] Amount validation
+- [x] Unit tests for validation and unit conversion
 - [ ] Clear error types
 - [x] Transaction status and failure handling
 - [x] Network fee estimation
