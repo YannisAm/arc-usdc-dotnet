@@ -61,15 +61,24 @@ namespace ArcUsdc
                 if (balance < rawAmount)
                     throw new InsufficientBalanceException(amount, 0m, UsdcUnits.FromUnits(balance));
 
-                var feeUnits = await EstimateFeeUnitsAsync(toAddress, rawAmount);
+                var quote = await QuoteFeeAsync(toAddress, rawAmount);
 
-                if (balance < rawAmount + feeUnits)
+                if (balance < rawAmount + quote.MaxCostUnits)
                     throw new InsufficientBalanceException(
                         amount,
-                        UsdcUnits.FromUnits(feeUnits),
+                        UsdcUnits.FromUnits(quote.MaxCostUnits),
                         UsdcUnits.FromUnits(balance));
 
-                var receipt = await _usdc.TransferRequestAndWaitForReceiptAsync(toAddress, rawAmount);
+                var transferFunction = new TransferFunction
+                {
+                    To = toAddress,
+                    Value = rawAmount,
+                    Gas = quote.GasLimit,
+                    MaxFeePerGas = quote.MaxFeePerGas,
+                    MaxPriorityFeePerGas = quote.MaxPriorityFeePerGas
+                };
+
+                var receipt = await _usdc.ContractHandler.SendRequestAndWaitForReceiptAsync(transferFunction);
 
                 if (receipt.Status?.Value != 1)
                     throw new TransactionFailedException(receipt.TransactionHash);
@@ -87,32 +96,9 @@ namespace ArcUsdc
 
             return await ExecuteAsync(async () =>
             {
-                var feeUnits = await EstimateFeeUnitsAsync(toAddress, rawAmount);
-                return UsdcUnits.FromUnits(feeUnits);
+                var quote = await QuoteFeeAsync(toAddress, rawAmount);
+                return UsdcUnits.FromUnits(quote.MaxCostUnits);
             });
-        }
-
-        private async Task<BigInteger> EstimateFeeUnitsAsync(string toAddress, BigInteger rawAmount)
-        {
-            var transferFunction = new TransferFunction
-            {
-                To = toAddress,
-                Value = rawAmount,
-                FromAddress = _account.Address
-            };
-            
-            // how much gas is needed
-            var gasEstimate = await _usdc.ContractHandler.EstimateGasAsync(transferFunction);
-            // how each gas unit costs
-            var gasPrice = await _web3.Eth.GasPrice.SendRequestAsync();
-                
-            // total gas cost
-            var feeIn18Decimals = gasEstimate.Value * gasPrice.Value;
-                
-            // from 18digit to 6digit with round up
-            var feeIn6Decimals = UsdcUnits.FromNativeRoundUp(feeIn18Decimals);
-
-            return feeIn6Decimals;
         }
 
         public static string GenerateKey()
@@ -126,21 +112,19 @@ namespace ArcUsdc
 
             return await ExecuteAsync(async () =>
             {
-                var balance = await GetBalanceAsync();
-                
-                if (balance == 0m)
-                    return 0;
+                var balance = await _usdc.BalanceOfQueryAsync(_account.Address);
 
-                var gas = await EstimateFeeUnitsAsync(toAddress, UsdcUnits.ToUnits(balance));
-                
-                var gasAsDecimal = UsdcUnits.FromUnits(gas);
+                if (balance.IsZero)
+                    return 0m;
 
-                var maxAmount = balance - gasAsDecimal;
+                var quote = await QuoteFeeAsync(toAddress, balance);
 
-                if (maxAmount <= 0m)
-                    return 0;
-                
-                return maxAmount;
+                var maxUnits = balance - quote.MaxCostUnits;
+
+                if (maxUnits <= 0)
+                    return 0m;
+
+                return UsdcUnits.FromUnits(maxUnits);
             });
         }
         
@@ -166,6 +150,28 @@ namespace ArcUsdc
             {
                 throw new ArcNetworkException("Could not connect to the Arc network.", ex);
             }
+        }
+        
+        private async Task<FeeQuote> QuoteFeeAsync(string toAddress, BigInteger rawAmount)
+        {
+            var transferFunction = new TransferFunction
+            {
+                To = toAddress,
+                Value = rawAmount,
+                FromAddress = _account.Address
+            };
+
+            var gasEstimate = await _usdc.ContractHandler.EstimateGasAsync(transferFunction);
+
+            var fee = await _web3.FeeSuggestion.GetSimpleFeeSuggestionStrategy().SuggestFeeAsync();
+
+            if (fee.MaxFeePerGas is null || fee.MaxPriorityFeePerGas is null)
+                throw new ArcUsdcException("The Arc network did not return a fee suggestion.");
+
+            return new FeeQuote(
+                gasEstimate.Value,
+                fee.MaxFeePerGas.Value,
+                fee.MaxPriorityFeePerGas.Value);
         }
     }
 }
