@@ -8,7 +8,7 @@ public class InsufficientBalanceException : ArcUsdcException
     public decimal Missing => Amount + EstimatedFee - Available;
 
     public InsufficientBalanceException(decimal amount, decimal estimatedFee, decimal available)
-        : base($"Insufficient balance: need {amount} USDC plus up to ~{estimatedFee} USDC network fee, " +
+        : base($"Insufficient balance: need {amount} USDC plus up to {estimatedFee} USDC network fee, " +
                $"but only {available} USDC is available.")
     {
         Amount = amount;
