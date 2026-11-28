@@ -13,7 +13,7 @@ internal static class ArcUsdcValidator
             throw new ArgumentOutOfRangeException(nameof(amount), amount, "USDC supports at most 6 decimal places.");
     }
     
-    internal static void EnsureAddress(string toAddress, bool requireChecksum = false)
+    internal static void EnsureAddress(string toAddress, string usdcContractAddress, bool requireChecksum = false)
     {
         if (string.IsNullOrWhiteSpace(toAddress))
             throw new ArgumentException("Recipient address cannot be null or empty.", nameof(toAddress));
@@ -34,7 +34,7 @@ internal static class ArcUsdcValidator
         if (AddressUtil.ZERO_ADDRESS.Equals(toAddress))
             throw new ArgumentException("Recipient address cannot be the zero address; funds sent there are lost.", nameof(toAddress));
         
-        if (string.Equals(ArcConstants.UsdcContractAddress, toAddress, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(usdcContractAddress, toAddress, StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("Recipient address cannot be the USDC contract address; funds sent there are lost.", nameof(toAddress));
     }
 }
