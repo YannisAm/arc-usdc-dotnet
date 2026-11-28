@@ -101,7 +101,8 @@ throws `ArgumentException` before anything is sent to the network.
 - [x] Network fee estimation
 - [x] Network configuration (`ArcUsdcClientOptions`)
 - [x] Optional strict checksum mode
-- [ ] Mainnet support
+- [x] Mainnet support (experimental)
+- [ ] TransferRejectedException
 - [ ] Get max sendable amount
 - [ ] Incoming payment detection
 - [ ] Idempotency (no duplicate payments)

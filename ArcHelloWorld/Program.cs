@@ -75,3 +75,21 @@ catch (ArcNetworkException ex)
     Console.WriteLine($"Network error caught: {ex.Message}");
     Console.WriteLine($"   Inner: {ex.InnerException?.GetType().Name}");
 }
+
+var mainnetClient = new ArcUsdcClient(ecKey, new ArcUsdcClientOptions
+{
+    Network = ArcNetwork.Mainnet
+});
+
+var mainnetBalance = await mainnetClient.GetBalanceAsync();
+Console.WriteLine($"{mainnetClient.Network.Name} balance: {mainnetBalance} USDC");
+
+try
+{
+    await client.EstimateTransferFeeAsync("0x70997970C51812dc3A010C7d01b50e0d17dc79C8", 1m);
+    Console.WriteLine("Expected rejection");
+}
+catch (ArcUsdcException ex)
+{
+    Console.WriteLine($"{ex.GetType().Name}: {ex.Message}");
+}
