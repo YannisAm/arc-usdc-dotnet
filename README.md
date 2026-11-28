@@ -103,6 +103,21 @@ catch (ArcNetworkException ex)
 Invalid input (bad address, zero or negative amount, more than 6 decimals)
 throws `ArgumentException` before anything is sent to the network.
 
+## Key management
+
+This library never stores or logs private keys. It receives the key from your
+application and uses it only to sign transactions. **Where you keep the key is
+your application's responsibility.**
+
+| Environment | Recommended storage |
+|---|---|
+| Local development | [.NET User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) or an environment variable |
+| Production | A secret manager such as Azure Key Vault or AWS Secrets Manager |
+| High-value production | An HSM or cloud KMS, where the key never leaves secure hardware *(planned: signer support)* |
+
+Never commit private keys to source control. The sample stores its test key in a
+plain `wallet.key` file **for demo purposes only**.
+
 ## Roadmap
 
 - [x] Address validation
@@ -119,6 +134,7 @@ throws `ArgumentException` before anything is sent to the network.
 - [ ] Incoming payment detection
 - [ ] Idempotency (no duplicate payments)
 - [ ] ASP.NET Core integration (separate `ArcUsdc.AspNetCore` package)
+- [ ] Signer support for HSM / cloud KMS
 - [ ] NuGet package
 
 ## Built with
