@@ -44,11 +44,11 @@ Console.WriteLine($"Default client accepted lowercase address. Fee: {fee} USDC")
 try
 {
     await clientTest.EstimateTransferFeeAsync(lowercaseAddress, 1m);
-    Console.WriteLine("❌ Strict client accepted it. Something is wrong.");
+    Console.WriteLine("Strict client accepted it. Something is wrong.");
 }
 catch (ArgumentException ex)
 {
-    Console.WriteLine($"✅ Strict client rejected it: {ex.Message}");
+    Console.WriteLine($"Strict client rejected it: {ex.Message}");
 }
 
 try
@@ -68,12 +68,12 @@ var offlineClient = new ArcUsdcClient(ecKey, new ArcUsdcClientOptions
 try
 {
     await offlineClient.GetBalanceAsync();
-    Console.WriteLine("❌ Expected a network error.");
+    Console.WriteLine("Expected a network error.");
 }
 catch (ArcNetworkException ex)
 {
     Console.WriteLine($"Network error caught: {ex.Message}");
-    Console.WriteLine($"   Inner: {ex.InnerException?.GetType().Name}");
+    Console.WriteLine($"Inner: {ex.InnerException?.GetType().Name}");
 }
 
 var mainnetClient = new ArcUsdcClient(ecKey, new ArcUsdcClientOptions
@@ -92,4 +92,19 @@ try
 catch (ArcUsdcException ex)
 {
     Console.WriteLine($"{ex.GetType().Name}: {ex.Message}");
+}
+
+var max = await client.GetMaxSendableAmountAsync(client.Address);
+Console.WriteLine($"Max sendable: {max} USDC");
+
+var tx = await client.TransferAsync(client.Address, max);
+Console.WriteLine($"Sent max to self: {tx}");
+
+try
+{
+    await client.TransferAsync(client.Address, max + 0.000001m);
+}
+catch (InsufficientBalanceException ex)
+{
+    Console.WriteLine($"Max + 0.000001 rejected. Missing: {ex.Missing} USDC");
 }

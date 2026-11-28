@@ -23,6 +23,7 @@ without dealing with the underlying blockchain details.
 - Typed exceptions (`InsufficientBalanceException`, `TransactionFailedException`, `ArcNetworkException`)
 - Configurable options (network, custom RPC URL, strict checksum mode)
 - Unit tests with CI on every pull request
+- Get the maximum sendable amount (balance minus maximum network fee)
 
 ## Quick example
 
@@ -41,6 +42,7 @@ Console.WriteLine($"Estimated network fee: {fee} USDC");
 string txHash = await client.TransferAsync("0xRecipientAddress", 1.5m);
 Console.WriteLine($"Transaction: {txHash}");
 ```
+Fee estimates return the maximum network fee. The actual fee charged is usually lower.
 
 Get free testnet USDC from the [Circle Faucet](https://faucet.circle.com) (choose **Arc Testnet**).
 
@@ -102,8 +104,8 @@ throws `ArgumentException` before anything is sent to the network.
 - [x] Network configuration (`ArcUsdcClientOptions`)
 - [x] Optional strict checksum mode
 - [x] Mainnet support (experimental)
+- [x] Get max sendable amount
 - [ ] TransferRejectedException
-- [ ] Get max sendable amount
 - [ ] Incoming payment detection
 - [ ] Idempotency (no duplicate payments)
 - [ ] ASP.NET Core integration (separate `ArcUsdc.AspNetCore` package)
