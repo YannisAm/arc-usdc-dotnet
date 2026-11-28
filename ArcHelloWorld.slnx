@@ -1,5 +1,5 @@
 <Solution>
-  <Project Path="ArcHelloWorld/ArcHelloWorld.csproj" />
+  <Project Path="ArcUsdc.Sample\ArcUsdc.Sample.csproj" />
   <Project Path="ArcUsdc.Tests/ArcUsdc.Tests.csproj" />
   <Project Path="ArcUsdc/ArcUsdc.csproj" />
 </Solution>
