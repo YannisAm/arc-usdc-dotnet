@@ -22,4 +22,10 @@ public sealed class ArcNetwork
         chainId: 5042002,
         rpcUrl: "https://rpc.testnet.arc.io",
         usdcContractAddress: "0x3600000000000000000000000000000000000000");
+    
+    public static readonly ArcNetwork Mainnet = new(
+        name: "Arc Mainnet",
+        chainId: 5042,
+        rpcUrl: "https://rpc.mainnet.arc.io",
+        usdcContractAddress: "0x3600000000000000000000000000000000000000");
 }
