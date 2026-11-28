@@ -120,6 +120,30 @@ namespace ArcUsdc
             return EthECKey.GenerateKey().GetPrivateKey();
         }
         
+        public async Task<decimal> GetMaxSendableAmountAsync(string toAddress)
+        {
+            ArcUsdcValidator.EnsureAddress(toAddress, Network.UsdcContractAddress, _requireChecksum);
+
+            return await ExecuteAsync(async () =>
+            {
+                var balance = await GetBalanceAsync();
+                
+                if (balance == 0m)
+                    return 0;
+
+                var gas = await EstimateFeeUnitsAsync(toAddress, UsdcUnits.ToUnits(balance));
+                
+                var gasAsDecimal = UsdcUnits.FromUnits(gas);
+
+                var maxAmount = balance - gasAsDecimal;
+
+                if (maxAmount <= 0m)
+                    return 0;
+                
+                return maxAmount;
+            });
+        }
+        
         private static async Task<T> ExecuteAsync<T>(Func<Task<T>> operation)
         {
             try

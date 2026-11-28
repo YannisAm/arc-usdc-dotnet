@@ -93,3 +93,9 @@ catch (ArcUsdcException ex)
 {
     Console.WriteLine($"{ex.GetType().Name}: {ex.Message}");
 }
+
+var max = await client.GetMaxSendableAmountAsync(client.Address);
+Console.WriteLine($"Max sendable: {max} USDC");
+
+var tx = await client.TransferAsync(client.Address, max);
+Console.WriteLine($"✅ Sent max to self: {tx}");
