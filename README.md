@@ -37,6 +37,15 @@ string txHash = await client.TransferAsync("0xRecipientAddress", 1.5m);
 
 decimal fee = await client.EstimateTransferFeeAsync("0xRecipientAddress", 1.5m);
 Console.WriteLine($"Estimated network fee: {fee} USDC");
+
+var client = new ArcUsdcClient(key, new ArcUsdcClientOptions
+{
+    Network = ArcNetwork.Testnet,                  // which Arc network to use
+    RpcUrl = "https://your-own-rpc-provider.com",  // optional: your own RPC endpoint
+    RequireChecksum = true                         // optional: reject addresses without a checksum
+});
+
+Console.WriteLine($"Network: {client.Network.Name}");
 ```
 
 Get free testnet USDC from the [Circle Faucet](https://faucet.circle.com) (choose **Arc Testnet**).
@@ -49,7 +58,8 @@ Get free testnet USDC from the [Circle Faucet](https://faucet.circle.com) (choos
 - [ ] Clear error types
 - [x] Transaction status and failure handling
 - [x] Network fee estimation
-- [ ] Testnet / Mainnet configuration
+- [x] Testnet / Mainnet configuration
+- [x] Optional strict checksum mode
 - [ ] Incoming payment detection
 - [ ] Idempotency (no duplicate payments)
 - [ ] ASP.NET Core integration (separate `ArcUsdc.AspNetCore` package)

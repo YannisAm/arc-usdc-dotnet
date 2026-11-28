@@ -6,6 +6,10 @@ public class ArcUsdcValidatorTests
 {
     private const string ChecksumAddress = "0xcEBA65587d8FCb785e5BDe94720985a483D65709";
 
+    // Η διεύθυνση του USDC στο δίκτυο που δοκιμάζουμε
+    private static readonly string UsdcAddress = ArcNetwork.Testnet.UsdcContractAddress;
+
+    // ================= ΔΙΕΥΘΥΝΣΕΙΣ =================
 
     [Theory]
     [InlineData(ChecksumAddress)]
@@ -13,7 +17,7 @@ public class ArcUsdcValidatorTests
     [InlineData("0xCEBA65587D8FCB785E5BDE94720985A483D65709")]
     public void EnsureAddress_ValidAddress_DoesNotThrow(string address)
     {
-        var exception = Record.Exception(() => ArcUsdcValidator.EnsureAddress(address));
+        var exception = Record.Exception(() => ArcUsdcValidator.EnsureAddress(address, UsdcAddress));
 
         Assert.Null(exception);
     }
@@ -26,13 +30,13 @@ public class ArcUsdcValidatorTests
     [InlineData("0xZZZZ65587d8fcb785e5bde94720985a483d65709")]
     public void EnsureAddress_InvalidFormat_Throws(string address)
     {
-        Assert.Throws<ArgumentException>(() => ArcUsdcValidator.EnsureAddress(address));
+        Assert.Throws<ArgumentException>(() => ArcUsdcValidator.EnsureAddress(address, UsdcAddress));
     }
 
     [Fact]
     public void EnsureAddress_Null_Throws()
     {
-        Assert.Throws<ArgumentException>(() => ArcUsdcValidator.EnsureAddress(null!));
+        Assert.Throws<ArgumentException>(() => ArcUsdcValidator.EnsureAddress(null!, UsdcAddress));
     }
 
     [Fact]
@@ -40,7 +44,7 @@ public class ArcUsdcValidatorTests
     {
         var wrongChecksum = "0xCEBA65587d8FCb785e5BDe94720985a483D65709";
 
-        Assert.Throws<ArgumentException>(() => ArcUsdcValidator.EnsureAddress(wrongChecksum));
+        Assert.Throws<ArgumentException>(() => ArcUsdcValidator.EnsureAddress(wrongChecksum, UsdcAddress));
     }
 
     [Fact]
@@ -49,14 +53,14 @@ public class ArcUsdcValidatorTests
         var lowercase = "0xceba65587d8fcb785e5bde94720985a483d65709";
 
         Assert.Throws<ArgumentException>(
-            () => ArcUsdcValidator.EnsureAddress(lowercase, requireChecksum: true));
+            () => ArcUsdcValidator.EnsureAddress(lowercase, UsdcAddress, requireChecksum: true));
     }
 
     [Fact]
     public void EnsureAddress_ChecksumWithRequireChecksum_DoesNotThrow()
     {
         var exception = Record.Exception(
-            () => ArcUsdcValidator.EnsureAddress(ChecksumAddress, requireChecksum: true));
+            () => ArcUsdcValidator.EnsureAddress(ChecksumAddress, UsdcAddress, requireChecksum: true));
 
         Assert.Null(exception);
     }
@@ -65,15 +69,17 @@ public class ArcUsdcValidatorTests
     public void EnsureAddress_ZeroAddress_Throws()
     {
         Assert.Throws<ArgumentException>(
-            () => ArcUsdcValidator.EnsureAddress("0x0000000000000000000000000000000000000000"));
+            () => ArcUsdcValidator.EnsureAddress("0x0000000000000000000000000000000000000000", UsdcAddress));
     }
 
     [Fact]
     public void EnsureAddress_UsdcContractAddress_Throws()
     {
         Assert.Throws<ArgumentException>(
-            () => ArcUsdcValidator.EnsureAddress(ArcConstants.UsdcContractAddress));
+            () => ArcUsdcValidator.EnsureAddress(UsdcAddress, UsdcAddress));
     }
+
+    // ================= ΠΟΣΑ =================
 
     [Theory]
     [InlineData("0.000001")]

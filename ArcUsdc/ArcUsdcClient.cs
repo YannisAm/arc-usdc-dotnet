@@ -11,19 +11,30 @@ namespace ArcUsdc
 {
     public class ArcUsdcClient
     {
+        public ArcNetwork Network { get; }
+        
         public string Address { get; }
 
         private readonly Account _account;
         private readonly Web3 _web3;
-        
         private readonly ERC20ContractService _usdc;
+        private readonly bool _requireChecksum;
 
-        public ArcUsdcClient(string privateKey)
+        public ArcUsdcClient(string privateKey, ArcUsdcClientOptions? options = null)
         {
-            _account = new Account(privateKey, ArcConstants.ChainId);
-            _web3 = new Web3(_account, ArcConstants.RpcUrl);
+            options ??= new ArcUsdcClientOptions();
+
+            Network = options.Network
+                      ?? throw new ArgumentNullException(nameof(options), "Options.Network cannot be null.");
+
+            _requireChecksum = options.RequireChecksum;
+
+            var rpcUrl = options.RpcUrl ?? Network.RpcUrl;
+            
+            _account = new Account(privateKey, Network.ChainId);
+            _web3 = new Web3(_account, rpcUrl);
             Address = _account.Address;
-            _usdc = _web3.Eth.ERC20.GetContractService(ArcConstants.UsdcContractAddress);
+            _usdc = _web3.Eth.ERC20.GetContractService(Network.UsdcContractAddress);
         }
 
         public async Task<decimal> GetBalanceAsync()
@@ -36,7 +47,7 @@ namespace ArcUsdc
         public async Task<string> TransferAsync(string toAddress, decimal amount)
         {
             ArcUsdcValidator.EnsureAmount(amount);
-            ArcUsdcValidator.EnsureAddress(toAddress);
+            ArcUsdcValidator.EnsureAddress(toAddress, Network.UsdcContractAddress, _requireChecksum);
 
             var rawAmount = UsdcUnits.ToUnits(amount);
 
@@ -81,7 +92,7 @@ namespace ArcUsdc
         public async Task<decimal> EstimateTransferFeeAsync(string toAddress, decimal amount)
         {
             ArcUsdcValidator.EnsureAmount(amount);
-            ArcUsdcValidator.EnsureAddress(toAddress);
+            ArcUsdcValidator.EnsureAddress(toAddress, Network.UsdcContractAddress, _requireChecksum);
 
             // decimal → units
             var rawAmount = UsdcUnits.ToUnits(amount);      
