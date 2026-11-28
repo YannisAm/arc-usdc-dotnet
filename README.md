@@ -46,6 +46,16 @@ Fee estimates return the maximum network fee. The actual fee charged is usually 
 
 Get free testnet USDC from the [Circle Faucet](https://faucet.circle.com) (choose **Arc Testnet**).
 
+## Running the sample
+
+```bash
+dotnet run --project ArcUsdc.Sample
+```
+
+The sample creates a test wallet (`wallet.key`) on first run.
+Fund it from the [Circle Faucet](https://faucet.circle.com) (choose **Arc Testnet**) and run again.
+It asks for confirmation before sending anything.
+
 ## Configuration
 
 By default the client uses **Arc Testnet**. You can change this with `ArcUsdcClientOptions`:
