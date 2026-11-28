@@ -154,3 +154,7 @@ plain `wallet.key` file **for demo purposes only**.
 
 - [.NET 10](https://dotnet.microsoft.com)
 - [Nethereum](https://nethereum.com)
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
