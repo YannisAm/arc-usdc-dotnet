@@ -6,6 +6,7 @@ using Nethereum.Web3.Accounts;
 using Nethereum.Contracts.Standards.ERC20;
 using Nethereum.Contracts.Standards.ERC20.ContractDefinition;
 using System.Numerics;
+using ArcUsdc.Exceptions;
 
 namespace ArcUsdc
 {
@@ -39,9 +40,11 @@ namespace ArcUsdc
 
         public async Task<decimal> GetBalanceAsync()
         {
-            var tokenBalance = await _usdc.BalanceOfQueryAsync(_account.Address);
-            
-            return UsdcUnits.FromUnits(tokenBalance);
+            return await ExecuteAsync(async () =>
+            {
+                var tokenBalance = await _usdc.BalanceOfQueryAsync(_account.Address);
+                return UsdcUnits.FromUnits(tokenBalance);
+            });
         }
 
         public async Task<string> TransferAsync(string toAddress, decimal amount)
@@ -51,42 +54,28 @@ namespace ArcUsdc
 
             var rawAmount = UsdcUnits.ToUnits(amount);
 
-            try
+            return await ExecuteAsync(async () =>
             {
                 var balance = await _usdc.BalanceOfQueryAsync(_account.Address);
-                
+
                 if (balance < rawAmount)
-                {
-                    throw new InvalidOperationException("Insufficient balance for the transfer.");
-                }
+                    throw new InsufficientBalanceException(amount, 0m, UsdcUnits.FromUnits(balance));
 
-                var feeIn6Decimals = await EstimateFeeUnitsAsync(toAddress, rawAmount);
+                var feeUnits = await EstimateFeeUnitsAsync(toAddress, rawAmount);
 
-                if (balance < rawAmount + feeIn6Decimals)
-                {
-                    var need = UsdcUnits.FromUnits(rawAmount);
-                    var fee = UsdcUnits.FromUnits(feeIn6Decimals);
-                    var have = UsdcUnits.FromUnits(balance);
-
-                    throw new InvalidOperationException(
-                        $"Insufficient balance: need {need} USDC plus ~{fee} USDC network fee, but only {have} USDC is available.");
-                }
+                if (balance < rawAmount + feeUnits)
+                    throw new InsufficientBalanceException(
+                        amount,
+                        UsdcUnits.FromUnits(feeUnits),
+                        UsdcUnits.FromUnits(balance));
 
                 var receipt = await _usdc.TransferRequestAndWaitForReceiptAsync(toAddress, rawAmount);
-                
+
                 if (receipt.Status?.Value != 1)
-                    throw new InvalidOperationException($"Transaction {receipt.TransactionHash} was mined but failed.");
-                
+                    throw new TransactionFailedException(receipt.TransactionHash);
+
                 return receipt.TransactionHash;
-            }
-            catch (SmartContractRevertException ex)
-            {
-                throw new InvalidOperationException($"Error during transfer: {ex.Message}", ex);
-            }
-            catch (RpcResponseException ex)
-            {
-                throw new InvalidOperationException($"Unexpected error during transfer: {ex.Message}", ex);
-            }
+            });
         }
 
         public async Task<decimal> EstimateTransferFeeAsync(string toAddress, decimal amount)
@@ -94,13 +83,13 @@ namespace ArcUsdc
             ArcUsdcValidator.EnsureAmount(amount);
             ArcUsdcValidator.EnsureAddress(toAddress, Network.UsdcContractAddress, _requireChecksum);
 
-            // decimal → units
-            var rawAmount = UsdcUnits.ToUnits(amount);      
-            
-            var feeUnits = await EstimateFeeUnitsAsync(toAddress, rawAmount);
-            
-            // units → decimal
-            return UsdcUnits.FromUnits(feeUnits);                         
+            var rawAmount = UsdcUnits.ToUnits(amount);
+
+            return await ExecuteAsync(async () =>
+            {
+                var feeUnits = await EstimateFeeUnitsAsync(toAddress, rawAmount);
+                return UsdcUnits.FromUnits(feeUnits);
+            });
         }
 
         private async Task<BigInteger> EstimateFeeUnitsAsync(string toAddress, BigInteger rawAmount)
@@ -129,6 +118,30 @@ namespace ArcUsdc
         public static string GenerateKey()
         {
             return EthECKey.GenerateKey().GetPrivateKey();
+        }
+        
+        private static async Task<T> ExecuteAsync<T>(Func<Task<T>> operation)
+        {
+            try
+            {
+                return await operation();
+            }
+            catch (SmartContractRevertException ex)
+            {
+                throw new ArcUsdcException($"The USDC contract rejected the operation: {ex.Message}", ex);
+            }
+            catch (RpcResponseException ex)
+            {
+                throw new ArcNetworkException("The Arc network returned an error.", ex);
+            }
+            catch (RpcClientTimeoutException ex)
+            {
+                throw new ArcNetworkException("The Arc network did not respond in time.", ex);
+            }
+            catch (RpcClientUnknownException ex)
+            {
+                throw new ArcNetworkException("Could not connect to the Arc network.", ex);
+            }
         }
     }
 }
