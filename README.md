@@ -4,7 +4,7 @@
 
 A .NET library for sending and receiving USDC on [Arc](https://www.arc.io), Circle's stablecoin-native blockchain.
 
-> ⚠️ **Early development.** Testnet only. Not ready for production or real funds.
+> ⚠️ **Early development.** Tested on Arc Testnet. Mainnet support is experimental. Not ready for real funds.
 
 ## Why
 
@@ -22,8 +22,9 @@ without dealing with the underlying blockchain details.
 - Detection of transactions that were mined but failed
 - Typed exceptions (`InsufficientBalanceException`, `TransactionFailedException`, `ArcNetworkException`)
 - Configurable options (network, custom RPC URL, strict checksum mode)
-- Unit tests with CI on every pull request
 - Get the maximum sendable amount (balance minus maximum network fee)
+- Unit tests with CI on every pull request
+
 
 ## Quick example
 
@@ -103,23 +104,51 @@ catch (ArcNetworkException ex)
 Invalid input (bad address, zero or negative amount, more than 6 decimals)
 throws `ArgumentException` before anything is sent to the network.
 
+## Key management
+
+This library never stores or logs private keys. It receives the key from your
+application and uses it only to sign transactions. **Where you keep the key is
+your application's responsibility.**
+
+| Environment | Recommended storage |
+|---|---|
+| Local development | [.NET User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) or an environment variable |
+| Production | A secret manager such as Azure Key Vault or AWS Secrets Manager |
+| High-value production | An HSM or cloud KMS, where the key never leaves secure hardware *(planned: signer support)* |
+
+Never commit private keys to source control. The sample stores its test key in a
+plain `wallet.key` file **for demo purposes only**.
+
 ## Roadmap
 
-- [x] Address validation
-- [x] Amount validation
-- [x] Unit tests for validation and unit conversion
-- [x] Clear error types
-- [x] Transaction status and failure handling
-- [x] Network fee estimation
-- [x] Network configuration (`ArcUsdcClientOptions`)
-- [x] Optional strict checksum mode
-- [x] Mainnet support (experimental)
-- [x] Get max sendable amount
-- [ ] TransferRejectedException
+### ✅ Phase 1: Core library
+- [x] USDC balance and transfers
+- [x] Address and amount validation (checksum, zero address, 6-decimal precision)
+- [x] Network fee estimation with explicit EIP-1559 fees
+- [x] Max sendable amount
+- [x] Detection of failed transactions
+- [x] Typed exceptions
+- [x] Network configuration (testnet, experimental mainnet, custom RPC, strict checksum)
+- [x] Unit tests and CI
+
+### 🚧 Phase 2: Payments and reliability
 - [ ] Incoming payment detection
 - [ ] Idempotency (no duplicate payments)
-- [ ] ASP.NET Core integration (separate `ArcUsdc.AspNetCore` package)
-- [ ] NuGet package
+- [ ] `CancellationToken` support on all async methods
+- [ ] `TransferRejectedException` for blocklisted addresses
+- [ ] Signer support for HSM / cloud KMS
+
+### Phase 3: ASP.NET Core integration
+- [ ] Separate `ArcUsdc.AspNetCore` package
+- [ ] `services.AddArcUsdc(...)` with configuration from `appsettings.json`
+- [ ] Background service for incoming payments
+- [ ] Sample web API that accepts USDC payments
+
+### Phase 4: Release
+- [ ] `src` / `tests` / `samples` folder structure
+- [ ] XML documentation for all public APIs
+- [ ] Multi-targeting (`netstandard2.0` + `net10.0`)
+- [ ] First preview release on NuGet
 
 ## Built with
 
